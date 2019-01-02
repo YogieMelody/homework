@@ -1,0 +1,72 @@
+查看当前系统版本：
+lsb_release -a
+
+查看mysql安装情况：
+rpm -qa | grep mysql >> mysql-libs-5.1.73-7.el6.x86_64当前mysql的安装包版本
+
+删除当前mysql安装包：
+yum remove  mysql mysql-server mysql-libs mysql-server;
+rpm -qa | grep mysql  如果还有东西，继续yum remove删除
+
+安装mysql8.0：
+下载mysql源安装包
+wget http://dev.mysql.com/get/mysql80-community-release-el6-1.noarch.rpm
+安装Mysql源
+yum -ivh mysql80-community-release-el6-1.noarch.rpm
+yum install mysql-server
+检验是否安装成功
+mysqladmin -V
+
+启动
+service mysqld start
+状态
+service mysqld status
+
+登录                                     注：安装完成之后,通过 service mysqld start 来启动mysql. 第一次启动的时候会进行一些初始化配置,蹦出一堆东西. 淡定. 使用下面这个命令来给mysql的root用户设置密码.mysqladmin -u root password 'new-passwd'
+
+然后就可以登录了. 
+获取初始密码
+cat /var/log/mysqld.log
+mysql -u root -p 
+修改密码                                
+alter user user() identified by 'xxxxxxxx'
+此时要求必须8位
+设置可以添加简单密码：
+set global validate_password.policy=0;
+set global validate_password.length=1;
+alter user user() identified by '123456';
+
+远程连接
+使用Ctrl+Z退出MySQL
+vim /etc/my.cnf          通过which mysqld命令来查看mysql的安装位置；通过/usr/local/mysql/bin/mysqld --verbose --help |grep -A 1 'Default options'命令来查看mysql使用的配置文件默认路径
+在最后一行添加default_authentication_plugin=mysql_native_password
+保存, 退出, 进入MySQL
+mysql -uroot -p
+use mysql;
+alter user 'root'@'localhost' identified with mysql_native_password by '123456';  localhost -> %
+flush privileges;
+update user set host='%' where user='root';
+
+flush privileges;
+1、改密码。
+2、授权超用户。
+/*flush privileges 命令本质上的作用是将当前user和privilige表中的用户信息/权限设置从mysql库(MySQL数据库的内置库)中提取到内存里。
+MySQL用户数据和权限有修改后，希望在"不重启MySQL服务"的情况下直接生效，那么就需要执行这个命令。
+通常是在修改ROOT帐号的设置后，怕重启后无法再登录进来，那么直接flush之后就可以看权限设置是否生效。而不必冒太大风险。*/
+
+退出MySQL
+关闭防火墙
+service iptables stop
+chkconfig iptables off
+Ctrl+Z
+
+
+如果嫌每次登录MySQL麻烦, 可以使用Linux的alias命令来偷懒
+cd ~
+vim .bashrc
+alias mysql='mysql -uroot -p123456'
+保存, 退出, 然后马上生效
+source .bashrc
+最后就可以用mysql来登录MySQL了
+
+service mysqld restart
